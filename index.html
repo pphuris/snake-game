@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>เกมงูคลาสสิค</title>
+
 <style>
   body {
     display: flex;
@@ -72,45 +73,6 @@
     background: #4facfe;
     color: #fff;
   }
-
-  /* ปุ่มควบคุมมือถือ */
-  #mobile-controls {
-    margin-top: 20px;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-  }
-
-  #mobile-controls .middle-row {
-    display: flex;
-    gap: 20px;
-  }
-
-  .btn {
-    width: 60px;
-    height: 60px;
-    font-size: 30px;
-    background: #ffffffaa;
-    border: none;
-    border-radius: 15px;
-    backdrop-filter: blur(4px);
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    transition: 0.1s;
-  }
-
-  .btn:active {
-    background: #fff;
-    transform: scale(0.9);
-  }
-
-  /* แสดงเฉพาะบนมือถือ */
-  @media (max-width: 600px) {
-    #mobile-controls {
-      display: flex;
-    }
-  }
 </style>
 </head>
 <body>
@@ -118,41 +80,27 @@
 <div id="game-container">
   <canvas id="gameCanvas" width="400" height="400"></canvas>
   <div id="score">Score: 0</div>
-  
+
   <div id="game-over">
     Game Over!<br>
     <button id="restart-btn">เล่นอีกครั้ง</button>
   </div>
 </div>
 
-<!-- ปุ่มควบคุมมือถือใหม่ -->
-<div id="mobile-controls">
-  <div class="dpad">
-    <div class="empty"></div>
-    <button class="up">▲</button>
-    <div class="empty"></div>
-
-    <button class="left">◄</button>
-    <div class="empty"></div>
-    <button class="right">►</button>
-
-    <div class="empty"></div>
-    <button class="down">▼</button>
-    <div class="empty"></div>
-  </div>
-</div>
-
-
 <script>
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
-  const scoreEl = document.getElementById('score');
-  const gameOverEl = document.getElementById('game-over');
-  const restartBtn = document.getElementById('restart-btn');
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+  const scoreEl = document.getElementById("score");
+  const gameOverEl = document.getElementById("game-over");
+  const restartBtn = document.getElementById("restart-btn");
 
   const box = 20;
   let snake = [{ x: 10 * box, y: 10 * box }];
   let direction = "RIGHT";
+  let score = 0;
+  let gameInterval;
+
+  // Emoji อาหาร
   const foodEmojis = ["🍎", "🍌", "🍇", "🍓", "🍍", "🥝", "🍒", "🥭", "🍑"];
 
   function createFood() {
@@ -164,20 +112,9 @@
   }
 
   let food = createFood();
-  let score = 0;
-  let gameInterval;
 
+  // ------------ PC Keyboard Controls ------------
   document.addEventListener("keydown", changeDirection);
-
-  // ปุ่ม restart (PC + mobile)
-  restartBtn.addEventListener("click", restartGame);
-
-  // Enter เพื่อ restart
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && gameOverEl.style.display === "block") {
-      restartGame();
-    }
-  });
 
   function changeDirection(e) {
     if (e.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
@@ -186,20 +123,36 @@
     if (e.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
   }
 
-  // ปุ่มควบคุมมือถือ
-  document.querySelector(".up").onclick = () => {
-    if (direction !== "DOWN") direction = "UP";
-  };
-  document.querySelector(".down").onclick = () => {
-    if (direction !== "UP") direction = "DOWN";
-  };
-  document.querySelector(".left").onclick = () => {
-    if (direction !== "RIGHT") direction = "LEFT";
-  };
-  document.querySelector(".right").onclick = () => {
-    if (direction !== "LEFT") direction = "RIGHT";
-  };
+  // ------------ Mobile Swipe Controls ------------
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchEndX = 0;
+  let touchEndY = 0;
 
+  canvas.addEventListener("touchstart", (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  });
+
+  canvas.addEventListener("touchmove", (e) => {
+    touchEndX = e.touches[0].clientX;
+    touchEndY = e.touches[0].clientY;
+  });
+
+  canvas.addEventListener("touchend", () => {
+    let dx = touchEndX - touchStartX;
+    let dy = touchEndY - touchStartY;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 30 && direction !== "LEFT") direction = "RIGHT";
+      else if (dx < -30 && direction !== "RIGHT") direction = "LEFT";
+    } else {
+      if (dy > 30 && direction !== "UP") direction = "DOWN";
+      else if (dy < -30 && direction !== "DOWN") direction = "UP";
+    }
+  });
+
+  // ------------ Game Loop ------------
   function draw() {
     ctx.fillStyle = "#222";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -212,13 +165,13 @@
       ctx.strokeRect(segment.x, segment.y, box, box);
     });
 
-    // วาดอาหารเป็น emoji
+    // วาดอาหาร Emoji
     ctx.font = box + "px Arial";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
     ctx.fillText(food.emoji, food.x, food.y);
 
-    // คำนวณตำแหน่งหัว
+    // คำนวณตำแหน่งงู
     let snakeX = snake[0].x;
     let snakeY = snake[0].y;
 
@@ -227,7 +180,7 @@
     if (direction === "UP") snakeY -= box;
     if (direction === "DOWN") snakeY += box;
 
-    // ถ้างูกินอาหาร
+    // ถ้ากินอาหาร
     if (snakeX === food.x && snakeY === food.y) {
       score++;
       scoreEl.innerText = "Score: " + score;
@@ -238,9 +191,9 @@
 
     let newHead = { x: snakeX, y: snakeY };
 
-    // ชนตัวเอง / ชนขอบ
+    // ชนตัวเองหรือชนขอบ
     if (
-      snake.some((s) => s.x === newHead.x && s.y === newHead.y) ||
+      snake.some((segment) => segment.x === newHead.x && segment.y === newHead.y) ||
       snakeX < 0 ||
       snakeX >= canvas.width ||
       snakeY < 0 ||
@@ -253,12 +206,13 @@
     snake.unshift(newHead);
   }
 
-  // ทิศทางเริ่มต้นสุ่ม
+  // สุ่มทิศทางเริ่มต้น
   function getRandomDirection() {
-    const directions = ["UP", "DOWN", "LEFT", "RIGHT"];
-    return directions[Math.floor(Math.random() * directions.length)];
+    const dirs = ["UP", "DOWN", "LEFT", "RIGHT"];
+    return dirs[Math.floor(Math.random() * dirs.length)];
   }
 
+  // Restart Game
   function restartGame() {
     snake = [{ x: 10 * box, y: 10 * box }];
     direction = getRandomDirection();
@@ -267,11 +221,20 @@
     food = createFood();
 
     gameOverEl.style.display = "none";
-
     clearInterval(gameInterval);
     gameInterval = setInterval(draw, 100);
   }
 
+  restartBtn.addEventListener("click", restartGame);
+
+  // กด Enter เพื่อ Restart
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && gameOverEl.style.display === "block") {
+      restartGame();
+    }
+  });
+
+  // เริ่มเกม
   direction = getRandomDirection();
   gameInterval = setInterval(draw, 100);
 </script>
