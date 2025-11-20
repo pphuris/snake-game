@@ -125,15 +125,23 @@
   </div>
 </div>
 
-<!-- ปุ่มควบคุมสำหรับมือถือ -->
+<!-- ปุ่มควบคุมมือถือใหม่ -->
 <div id="mobile-controls">
-  <button class="btn up">▲</button>
-  <div class="middle-row">
-    <button class="btn left">◄</button>
-    <button class="btn down">▼</button>
-    <button class="btn right">►</button>
+  <div class="dpad">
+    <div class="empty"></div>
+    <button class="up">▲</button>
+    <div class="empty"></div>
+
+    <button class="left">◄</button>
+    <div class="empty"></div>
+    <button class="right">►</button>
+
+    <div class="empty"></div>
+    <button class="down">▼</button>
+    <div class="empty"></div>
   </div>
 </div>
+
 
 <script>
   const canvas = document.getElementById('gameCanvas');
