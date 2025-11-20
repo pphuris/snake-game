@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>เกมงูคลาสสิค</title>
-
 <style>
   body {
     display: flex;
@@ -73,6 +72,8 @@
     background: #4facfe;
     color: #fff;
   }
+
+  }
 </style>
 </head>
 <body>
@@ -80,27 +81,33 @@
 <div id="game-container">
   <canvas id="gameCanvas" width="400" height="400"></canvas>
   <div id="score">Score: 0</div>
-
+  
   <div id="game-over">
     Game Over!<br>
     <button id="restart-btn">เล่นอีกครั้ง</button>
   </div>
 </div>
 
+<!-- ปุ่มควบคุมสำหรับมือถือ -->
+<div id="mobile-controls">
+  <button class="btn up">▲</button>
+  <div class="middle-row">
+    <button class="btn left">◄</button>
+    <button class="btn down">▼</button>
+    <button class="btn right">►</button>
+  </div>
+</div>
+
 <script>
-  const canvas = document.getElementById("gameCanvas");
-  const ctx = canvas.getContext("2d");
-  const scoreEl = document.getElementById("score");
-  const gameOverEl = document.getElementById("game-over");
-  const restartBtn = document.getElementById("restart-btn");
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const gameOverEl = document.getElementById('game-over');
+  const restartBtn = document.getElementById('restart-btn');
 
   const box = 20;
   let snake = [{ x: 10 * box, y: 10 * box }];
   let direction = "RIGHT";
-  let score = 0;
-  let gameInterval;
-
-  // Emoji อาหาร
   const foodEmojis = ["🍎", "🍌", "🍇", "🍓", "🍍", "🥝", "🍒", "🥭", "🍑"];
 
   function createFood() {
@@ -112,9 +119,20 @@
   }
 
   let food = createFood();
+  let score = 0;
+  let gameInterval;
 
-  // ------------ PC Keyboard Controls ------------
   document.addEventListener("keydown", changeDirection);
+
+  // ปุ่ม restart (PC + mobile)
+  restartBtn.addEventListener("click", restartGame);
+
+  // Enter เพื่อ restart
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && gameOverEl.style.display === "block") {
+      restartGame();
+    }
+  });
 
   function changeDirection(e) {
     if (e.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
@@ -123,36 +141,37 @@
     if (e.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
   }
 
-  // ------------ Mobile Swipe Controls ------------
-  let touchStartX = 0;
-  let touchStartY = 0;
-  let touchEndX = 0;
-  let touchEndY = 0;
+// Touchscreen Swipe Control
+let touchStartX = 0;
+let touchStartY = 0;
+let touchEndX = 0;
+let touchEndY = 0;
 
-  canvas.addEventListener("touchstart", (e) => {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-  });
+canvas.addEventListener("touchstart", function (e) {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+});
 
-  canvas.addEventListener("touchmove", (e) => {
-    touchEndX = e.touches[0].clientX;
-    touchEndY = e.touches[0].clientY;
-  });
+canvas.addEventListener("touchmove", function (e) {
+  touchEndX = e.touches[0].clientX;
+  touchEndY = e.touches[0].clientY;
+});
 
-  canvas.addEventListener("touchend", () => {
-    let dx = touchEndX - touchStartX;
-    let dy = touchEndY - touchStartY;
+canvas.addEventListener("touchend", function () {
+  let dx = touchEndX - touchStartX;
+  let dy = touchEndY - touchStartY;
 
-    if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 30 && direction !== "LEFT") direction = "RIGHT";
-      else if (dx < -30 && direction !== "RIGHT") direction = "LEFT";
-    } else {
-      if (dy > 30 && direction !== "UP") direction = "DOWN";
-      else if (dy < -30 && direction !== "DOWN") direction = "UP";
-    }
-  });
+  if (Math.abs(dx) > Math.abs(dy)) {
+    // สไลด์แนวนอน
+    if (dx > 30 && direction !== "LEFT") direction = "RIGHT";
+    else if (dx < -30 && direction !== "RIGHT") direction = "LEFT";
+  } else {
+    // สไลด์แนวตั้ง
+    if (dy > 30 && direction !== "UP") direction = "DOWN";
+    else if (dy < -30 && direction !== "DOWN") direction = "UP";
+  }
+});
 
-  // ------------ Game Loop ------------
   function draw() {
     ctx.fillStyle = "#222";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -165,13 +184,13 @@
       ctx.strokeRect(segment.x, segment.y, box, box);
     });
 
-    // วาดอาหาร Emoji
+    // วาดอาหารเป็น emoji
     ctx.font = box + "px Arial";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
     ctx.fillText(food.emoji, food.x, food.y);
 
-    // คำนวณตำแหน่งงู
+    // คำนวณตำแหน่งหัว
     let snakeX = snake[0].x;
     let snakeY = snake[0].y;
 
@@ -180,7 +199,7 @@
     if (direction === "UP") snakeY -= box;
     if (direction === "DOWN") snakeY += box;
 
-    // ถ้ากินอาหาร
+    // ถ้างูกินอาหาร
     if (snakeX === food.x && snakeY === food.y) {
       score++;
       scoreEl.innerText = "Score: " + score;
@@ -191,9 +210,9 @@
 
     let newHead = { x: snakeX, y: snakeY };
 
-    // ชนตัวเองหรือชนขอบ
+    // ชนตัวเอง / ชนขอบ
     if (
-      snake.some((segment) => segment.x === newHead.x && segment.y === newHead.y) ||
+      snake.some((s) => s.x === newHead.x && s.y === newHead.y) ||
       snakeX < 0 ||
       snakeX >= canvas.width ||
       snakeY < 0 ||
@@ -206,13 +225,12 @@
     snake.unshift(newHead);
   }
 
-  // สุ่มทิศทางเริ่มต้น
+  // ทิศทางเริ่มต้นสุ่ม
   function getRandomDirection() {
-    const dirs = ["UP", "DOWN", "LEFT", "RIGHT"];
-    return dirs[Math.floor(Math.random() * dirs.length)];
+    const directions = ["UP", "DOWN", "LEFT", "RIGHT"];
+    return directions[Math.floor(Math.random() * directions.length)];
   }
 
-  // Restart Game
   function restartGame() {
     snake = [{ x: 10 * box, y: 10 * box }];
     direction = getRandomDirection();
@@ -221,20 +239,11 @@
     food = createFood();
 
     gameOverEl.style.display = "none";
+
     clearInterval(gameInterval);
     gameInterval = setInterval(draw, 100);
   }
 
-  restartBtn.addEventListener("click", restartGame);
-
-  // กด Enter เพื่อ Restart
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && gameOverEl.style.display === "block") {
-      restartGame();
-    }
-  });
-
-  // เริ่มเกม
   direction = getRandomDirection();
   gameInterval = setInterval(draw, 100);
 </script>
